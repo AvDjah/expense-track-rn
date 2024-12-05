@@ -1,4 +1,6 @@
-import React, { useState } from "react";
+import { AppStateContext } from "@/app/_layout";
+import { SetValueForStore } from "../store/store";
+import React, { useContext, useState } from "react";
 import {
   SafeAreaView,
   StyleSheet,
@@ -7,6 +9,7 @@ import {
   Pressable,
   Text,
 } from "react-native";
+import { router } from "expo-router";
 
 const styles = StyleSheet.create({
   container: {
@@ -29,15 +32,41 @@ const styles = StyleSheet.create({
 });
 
 const LoginBox = () => {
+  const appStateContext = useContext(AppStateContext);
+
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [usernameActive, setUsernameActive] = useState(false);
   const [passwordActive, setPasswordActive] = useState(false);
 
-  const handleLogin = () => {
-    // Handle login logic here.  Replace this with your actual login functionality.
-    console.log("Username:", username);
-    console.log("Password:", password);
+  const handleLogin = async () => {
+    try {
+      const response = await fetch("http://10.0.2.2:8080/user/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ username, password }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Login failed:", errorData);
+        // Handle error appropriately, e.g., display an error message to the user.
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log("Login successful:", data);
+      // Handle successful login, e.g., navigate to another screen.
+      const token = data.token;
+      SetValueForStore("user_token", token);
+
+      router.back();
+    } catch (error) {
+      console.error("Login error:", error);
+      // Handle errors appropriately, e.g., display an error message
+    }
   };
 
   return (

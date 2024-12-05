@@ -1,4 +1,4 @@
-import { Link, useFocusEffect } from "expo-router";
+import { Link, router, useFocusEffect } from "expo-router";
 import { useCallback, useContext, useEffect, useState } from "react";
 import {
   FlatList,
@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import ExpenseItem from "./ExpenseItem";
 import { AppStateContext } from "./_layout";
+import { GetValueFromStore, USER_TOKEN_KEY } from "../components/store/store";
 
 // Add this interface before your component
 export interface Expense {
@@ -52,14 +53,15 @@ export default function Index() {
 
   const [posts, setPostList] = useState<Expense[]>([]);
 
-  let token =
-    "n4LLFJhK0jY7rISukAc2KGPvwgQLzS3fmXnNwOqiTvX4j8zsd1ZfUsfxgSuEsQs5UHrlGcZ8ax/y5iywpI2zpB4Qxb3PFPHEvg+iHYCIz9rQU8rVGe+NuMLy2+vpj9Kkx3kG58KMJEot3mfJ/bi8g8UdsfZdQl+m2y9TMB7zKZSeAIIww9swA6AaUSdptSiIFUkryH9+fFNLaFc9Bh2N2YvvTjuIPhQqwmWy7S7Xd8Ya37t+dtIhU9FkG4Y9EMNFH3qy7L9jbYLHIp/gEcaq";
-
   const fetchExpenses = async () => {
+    if (appContext.appState.userToken === null) {
+      router.push("/login");
+    }
+
     try {
       const response = await fetch("http://10.0.2.2:8080/expense/all", {
         headers: {
-          Authorization: "Bearer " + token,
+          Authorization: "Bearer " + appContext.appState.userToken,
           "Content-Type": "application/json",
         },
       });
@@ -73,18 +75,72 @@ export default function Index() {
 
   useFocusEffect(
     useCallback(() => {
-      triggerFetch();
+      checkIfLoggedIn().then(() => {
+        triggerFetch();
+      });
     }, []),
   );
+
+  const checkIfLoggedIn = async () => {
+    let token;
+    if (appContext.appState.userToken === null) {
+      token = await GetValueFromStore(USER_TOKEN_KEY);
+      console.log("Got token: ", token);
+      if (token === "") {
+        router.push("/login");
+      } else {
+        appContext.appState.userToken = token;
+      }
+    }
+
+    if (token !== "" && token !== undefined) {
+      console.log(`Had token: ${token} before fetch checking`);
+      fetch("http://10.0.2.2:8080/user/check", {
+        method: "GET",
+        headers: {
+          Authorization: "Bearer " + token,
+          "Content-Type": "application/json",
+        },
+      })
+        .then((response) => {
+          if (response.status === 200) {
+            console.log("Successfull authentication");
+            return response.json();
+          } else if (response.status === 401) {
+            // Handle unauthorized case (e.g., log out the user)
+            console.log("Unauthorized");
+            appContext.logoutUser!();
+            return null; // or throw an error
+          } else {
+            // Handle other error responses
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+        })
+        .then((data) => {
+          if (data !== null) {
+            console.log("User check response:", data);
+            appContext.loginUser!({
+              email: data.user.Username,
+              name: data.user.Name,
+            });
+          }
+        })
+        .catch((error) => {
+          console.error("Error checking user:", error);
+        });
+    } else {
+      console.log("Error reading token from memory");
+    }
+  };
 
   const triggerFetch = () => {
     fetchExpenses();
   };
 
-  useEffect(() => {
-    triggerFetch();
-    console.log("Initial fetch completed");
-  }, []);
+  // useEffect(() => {
+  //   triggerFetch();
+  //   console.log("Initial fetch completed");
+  // }, []);
 
   // Create an Animated.Value for background color interpolation
   const [animatedValue, setAnimatedValue] = useState(new Animated.Value(0));
@@ -99,25 +155,28 @@ export default function Index() {
     <SafeAreaView
       style={{
         height: "100%",
-        backgroundColor: "#F0F8F0",
       }}
     >
       <View
         style={{
           margin: 10,
           padding: 10,
-          flexDirection: "row",
+          flexDirection: "column",
           gap: 10,
         }}
       >
         <Text
           style={{
             fontSize: 20,
+            textAlign: "center",
           }}
         >
-          User is currently: {appContext.loggedIn ? "Logged In" : "Logged out"}
+          User is currently:{" "}
+          {appContext.appState.loggedIn
+            ? "Logged In as: " + JSON.stringify(appContext.appState.user)
+            : "Logged out"}
         </Text>
-        {appContext.loggedIn == false && (
+        {appContext.appState.loggedIn == false && (
           <Pressable
             style={{
               backgroundColor: "darkgreen",
@@ -140,6 +199,29 @@ export default function Index() {
                 Log In
               </Text>
             </Link>
+          </Pressable>
+        )}
+        {appContext.appState.loggedIn == true && (
+          <Pressable
+            onPress={appContext.logoutUser}
+            style={{
+              backgroundColor: "green",
+              padding: 10,
+              borderRadius: 20,
+              marginTop: 10,
+              width: 150,
+              alignSelf: "center",
+            }}
+          >
+            <Text
+              style={{
+                color: "white",
+                fontSize: 20,
+                textAlign: "center",
+              }}
+            >
+              Log Out
+            </Text>
           </Pressable>
         )}
       </View>
