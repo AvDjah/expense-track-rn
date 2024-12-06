@@ -8,10 +8,13 @@ import {
   TextInput,
   View,
   Animated,
+  StyleSheet,
 } from "react-native";
 import ExpenseItem from "./ExpenseItem";
 import { AppStateContext } from "./_layout";
 import { GetValueFromStore, USER_TOKEN_KEY } from "../components/store/store";
+import ExpenseList from "@/components/home/itemList";
+import HeaderBar from "@/components/home/topBar";
 
 // Add this interface before your component
 export interface Expense {
@@ -38,118 +41,138 @@ export interface Expense {
   UserID: number;
 }
 
+const buttonStyles = StyleSheet.create({
+  base: {
+    backgroundColor: "green",
+    padding: 10,
+    borderRadius: 20,
+    marginTop: 10,
+    width: 150,
+    alignSelf: "center",
+  },
+  text: {
+    color: "white",
+    fontSize: 12,
+    textAlign: "center",
+  },
+});
+
 export default function Index() {
-  const [count, setCount] = useState(0);
-
   const appContext = useContext(AppStateContext);
-
-  const incrementCount = () => {
-    setCount(count + 1);
-  };
-
-  const decrementCount = () => {
-    setCount(count - 1);
-  };
-
-  const [posts, setPostList] = useState<Expense[]>([]);
+  const [expenses, setExpenseList] = useState<Expense[]>([]);
 
   const fetchExpenses = async () => {
-    if (appContext.appState.userToken === null) {
-      router.push("/login");
+    if (appContext.userToken === null) {
+      // setExpenseList([]);
+      console.log("could not fetch expenses since no token");
+      return;
     }
 
     try {
       const response = await fetch("http://10.0.2.2:8080/expense/all", {
         headers: {
-          Authorization: "Bearer " + appContext.appState.userToken,
+          Authorization: "Bearer " + appContext.userToken,
           "Content-Type": "application/json",
         },
       });
       const data: Expense[] = await response.json();
-      setPostList(data);
+      setExpenseList(data);
       console.log("Fetched expenses: ", data.length);
     } catch (error) {
+      setExpenseList([]);
       console.error("Error fetching expenses: ", error);
     }
   };
 
   useFocusEffect(
     useCallback(() => {
-      checkIfLoggedIn().then(() => {
-        triggerFetch();
-      });
+      triggerFetch();
     }, []),
   );
 
-  const checkIfLoggedIn = async () => {
+  const populateToken = async () => {
     let token;
-    if (appContext.appState.userToken === null) {
+    if (appContext.userToken === null || appContext.userToken === "") {
       token = await GetValueFromStore(USER_TOKEN_KEY);
-      console.log("Got token: ", token);
-      if (token === "") {
-        router.push("/login");
+      console.log("Populating token got: ", token);
+      if (token !== "") {
+        await checkUserAuth(token);
       } else {
-        appContext.appState.userToken = token;
+        setExpenseList([]);
       }
     }
+  };
+
+  useEffect(() => {
+    console.log("Runnig useEffect for userToken");
+    checkIfLoggedIn().then(() => {
+      triggerFetch();
+    });
+  }, [appContext.userToken]);
+
+  const checkIfLoggedIn = async () => {
+    let token;
+    console.log("checkingIfLoggedIn");
+    console.log(
+      "Before checking login -> appContext token: ",
+      appContext.userToken,
+    );
+    if (appContext.userToken === null || appContext.userToken === "") {
+      token = await GetValueFromStore(USER_TOKEN_KEY);
+      console.log("Got token from store: ", token);
+      if (token === "") {
+        router.push("/login");
+        return;
+      } else {
+        appContext.setUserToken!(token);
+      }
+    } else {
+      token = appContext.userToken;
+    }
+
+    console.log("appContext token:", appContext.userToken);
+    console.log("and token value: ", token);
 
     if (token !== "" && token !== undefined) {
-      console.log(`Had token: ${token} before fetch checking`);
-      fetch("http://10.0.2.2:8080/user/check", {
+      console.log(`Had token before checking: ${token}`);
+      await checkUserAuth(token); // Call the extracted function
+    } else {
+      console.log("Error reading token from memory as token: ", token);
+    }
+  };
+
+  const checkUserAuth = async (token: string) => {
+    try {
+      const response = await fetch("http://10.0.2.2:8080/user/check", {
         method: "GET",
         headers: {
           Authorization: "Bearer " + token,
           "Content-Type": "application/json",
         },
-      })
-        .then((response) => {
-          if (response.status === 200) {
-            console.log("Successfull authentication");
-            return response.json();
-          } else if (response.status === 401) {
-            // Handle unauthorized case (e.g., log out the user)
-            console.log("Unauthorized");
-            appContext.logoutUser!();
-            return null; // or throw an error
-          } else {
-            // Handle other error responses
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
-        })
-        .then((data) => {
-          if (data !== null) {
-            console.log("User check response:", data);
-            appContext.loginUser!({
-              email: data.user.Username,
-              name: data.user.Name,
-            });
-          }
-        })
-        .catch((error) => {
-          console.error("Error checking user:", error);
+      });
+
+      if (response.status === 200) {
+        console.log("Successfull authentication");
+        const data = await response.json();
+        console.log("User check response:", data);
+        appContext.loginUser!({
+          email: data.user.Username,
+          name: data.user.Name,
         });
-    } else {
-      console.log("Error reading token from memory");
+      } else if (response.status === 401) {
+        console.log("Unauthorized");
+        appContext.logoutUser!();
+      } else {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+    } catch (error) {
+      console.error("Error checking user:", error);
     }
   };
 
   const triggerFetch = () => {
     fetchExpenses();
   };
-
-  // useEffect(() => {
-  //   triggerFetch();
-  //   console.log("Initial fetch completed");
-  // }, []);
-
-  // Create an Animated.Value for background color interpolation
-  const [animatedValue, setAnimatedValue] = useState(new Animated.Value(0));
-
-  // Create interpolated background color
-  const backgroundColor = animatedValue.interpolate({
-    inputRange: [0, 1],
-    outputRange: ["white", "lightblue"],
-  });
 
   return (
     <SafeAreaView
@@ -163,11 +186,14 @@ export default function Index() {
           padding: 10,
           flexDirection: "column",
           gap: 10,
+          justifyContent: "center",
+          alignItems: "center",
         }}
       >
+        <HeaderBar />
         <Text
           style={{
-            fontSize: 20,
+            fontSize: 12, // Changed font size to 12
             textAlign: "center",
           }}
         >
@@ -177,121 +203,19 @@ export default function Index() {
             : "Logged out"}
         </Text>
         {appContext.appState.loggedIn == false && (
-          <Pressable
-            style={{
-              backgroundColor: "darkgreen",
-              paddingHorizontal: 10,
-              paddingVertical: 5,
-              borderRadius: 15,
-              marginBottom: 10,
-              width: 100,
-            }}
-          >
+          <Pressable style={buttonStyles.base}>
             <Link href="/login">
-              <Text
-                style={{
-                  color: "white",
-                  fontSize: 20,
-                  textAlign: "center",
-                  width: "100%",
-                }}
-              >
-                Log In
-              </Text>
+              <Text style={buttonStyles.text}>Log In</Text>
             </Link>
           </Pressable>
         )}
         {appContext.appState.loggedIn == true && (
-          <Pressable
-            onPress={appContext.logoutUser}
-            style={{
-              backgroundColor: "green",
-              padding: 10,
-              borderRadius: 20,
-              marginTop: 10,
-              width: 150,
-              alignSelf: "center",
-            }}
-          >
-            <Text
-              style={{
-                color: "white",
-                fontSize: 20,
-                textAlign: "center",
-              }}
-            >
-              Log Out
-            </Text>
+          <Pressable onPress={appContext.logoutUser} style={buttonStyles.base}>
+            <Text style={buttonStyles.text}>Log Out</Text>
           </Pressable>
         )}
       </View>
-      <View
-        style={{
-          alignItems: "center",
-          margin: 10,
-        }}
-      >
-        <Animated.View
-          style={{
-            backgroundColor: backgroundColor,
-            alignItems: "center",
-            padding: 10,
-            borderWidth: 2,
-            borderRadius: 15,
-            paddingVertical: 10,
-            paddingHorizontal: 20,
-          }}
-        >
-          <Pressable
-            style={{
-              alignSelf: "flex-start",
-            }}
-          >
-            <Link href="/addExpense">
-              <Text
-                style={{
-                  fontSize: 20,
-                }}
-              >
-                Add New
-              </Text>
-            </Link>
-          </Pressable>
-        </Animated.View>
-      </View>
-      <SafeAreaView
-        style={{
-          borderWidth: 2,
-          margin: 10,
-          borderRadius: 15,
-          maxHeight: "50%",
-        }}
-      >
-        <Text
-          style={{
-            fontWeight: "bold",
-            fontSize: 20,
-            textAlign: "center",
-          }}
-        >
-          Expenses
-        </Text>
-        <View
-          style={{
-            height: 2,
-            backgroundColor: "gray",
-            marginVertical: 4,
-          }}
-        ></View>
-        <FlatList
-          style={{
-            height: "100%",
-          }}
-          data={posts}
-          renderItem={(item) => <ExpenseItem expense={item.item} />}
-          keyExtractor={(item) => item.ID.toString()}
-        ></FlatList>
-      </SafeAreaView>
+      {appContext.appState.loggedIn && <ExpenseList expenses={expenses} />}
     </SafeAreaView>
   );
 }

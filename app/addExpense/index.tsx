@@ -6,13 +6,16 @@ import {
   StyleSheet,
   SafeAreaView,
 } from "react-native";
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { router } from "expo-router";
+import { AppStateContext } from "../_layout";
 
 type AndroidMode = "date" | "time";
 
 export default function AddExpense() {
+  const appContext = useContext(AppStateContext);
+
   const [expenseName, setExpenseName] = useState("");
   const [amount, setAmount] = useState("0");
   const [description, setDescription] = useState("");
@@ -53,14 +56,16 @@ export default function AddExpense() {
     showModeDate("date");
   };
 
-  let token =
-    "n4LLFJhK0jY7rISukAc2KGPvwgQLzS3fmXnNwOqiTvX4j8zsd1ZfUsfxgSuEsQs5UHrlGcZ8ax/y5iywpI2zpB4Qxb3PFPHEvg+iHYCIz9rQU8rVGe+NuMLy2+vpj9Kkx3kG58KMJEot3mfJ/bi8g8UdsfZdQl+m2y9TMB7zKZSeAIIww9swA6AaUSdptSiIFUkryH9+fFNLaFc9Bh2N2YvvTjuIPhQqwmWy7S7Xd8Ya37t+dtIhU9FkG4Y9EMNFH3qy7L9jbYLHIp/gEcaq";
-
   const showTimepicker = () => {
     showModeTime("time");
   };
 
   const submitData = async () => {
+    if (appContext.userToken === "" || appContext.userToken === null) {
+      console.log("toke does not exist hence fetch cancelled.");
+      return;
+    }
+    const token = appContext.userToken;
     try {
       const combinedDateTime = new Date(date);
       combinedDateTime.setHours(time.getHours());

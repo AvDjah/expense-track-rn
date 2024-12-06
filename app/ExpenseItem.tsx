@@ -2,7 +2,6 @@ import {
   View,
   Text,
   StyleSheet,
-  Button,
   Pressable,
   ScrollView,
   LayoutChangeEvent,
@@ -18,13 +17,13 @@ export default function ExpenseItem({ expense }: { expense: Expense }) {
 
   let isCompressed = false;
 
-  let currency = "Rs."
+  let currency = "Rs.";
 
   const layoutCheck = (e: LayoutChangeEvent) => {
-    console.log("Height of element: ", e.nativeEvent.layout.height);
+    // console.log("Height of element: ", e.nativeEvent.layout.height);
     const height = e.nativeEvent.layout.height;
     if (height > 50) {
-      console.log("Setting layout to expandable");
+      // console.log("Setting layout to expandable");
       setIsExpandable(true);
       isCompressed = true;
     }
@@ -59,7 +58,7 @@ export default function ExpenseItem({ expense }: { expense: Expense }) {
           style={{
             flexDirection: "column",
             gap: 10,
-            
+
             flex: 1,
             marginRight: 10,
           }}
@@ -69,7 +68,7 @@ export default function ExpenseItem({ expense }: { expense: Expense }) {
               width: "100%",
               flexWrap: "wrap",
               fontWeight: "800",
-              fontSize: 20,
+              fontSize: 15, // Changed font size to 15 for heading
             }}
             onLayout={layoutCheck}
             // numberOfLines={expanded ? undefined : 2}
@@ -80,7 +79,7 @@ export default function ExpenseItem({ expense }: { expense: Expense }) {
             style={{
               color: "#cc3333",
               fontWeight: "700",
-              fontSize: 15
+              fontSize: 12, // Changed font size to 12
             }}
           >
             {currency} {expense.Amount}
@@ -102,6 +101,7 @@ export default function ExpenseItem({ expense }: { expense: Expense }) {
             style={{
               color: "white",
               textAlign: "center",
+              fontSize: 12, // Changed font size to 12
             }}
           >
             {expanded ? "Collapse" : "Expand"}
@@ -132,6 +132,7 @@ const CustomButton = () => {
           color: "white",
           textAlign: "center",
           textAlignVertical: "center",
+          fontSize: 12, // Changed font size to 12
         }}
       >
         Click me

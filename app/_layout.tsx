@@ -13,11 +13,12 @@ export interface User {
 export interface AppState {
   user: User | null;
   loggedIn: boolean;
-  userToken: null | string;
 }
 
 export interface AppStateContext {
   appState: AppState;
+  userToken: string | null;
+  setUserToken: ((token: string | null) => void) | null;
   loginUser: ((user: User) => void) | null;
   logoutUser: (() => void) | null;
 }
@@ -25,13 +26,14 @@ export interface AppStateContext {
 const defaultState: AppState = {
   user: null,
   loggedIn: false,
-  userToken: null,
 };
 
 const defaultAppContext: AppStateContext = {
   appState: defaultState,
   loginUser: null,
   logoutUser: null,
+  userToken: null,
+  setUserToken: null,
 };
 
 export const AppStateContext =
@@ -41,32 +43,36 @@ export default function RootLayout() {
   const [appState, setAppState] = useState<AppState>({
     loggedIn: false,
     user: null,
-    userToken: null,
   });
+  const [userToken, setUserToken] = useState<string | null>(null);
 
   const loginUser = (user: User) => {
-    setAppState({
-      user: user,
+    setAppState((prevState) => ({
+      ...prevState,
       loggedIn: true,
-      userToken: null,
-    });
+      user: user,
+    }));
   };
 
   const logoutUser = () => {
     DeleteKeyFromStore(USER_TOKEN_KEY);
-    setAppState({
+    setAppState((prevState) => ({
+      ...prevState,
       user: null,
       loggedIn: false,
-      userToken: null,
-    });
+    }));
+    setUserToken(null);
   };
 
   return (
+    // <React.StrictMode>
     <AppStateContext.Provider
       value={{
         appState: appState,
         loginUser: loginUser,
         logoutUser: logoutUser,
+        userToken: userToken,
+        setUserToken: setUserToken,
       }}
     >
       <Stack
@@ -78,5 +84,6 @@ export default function RootLayout() {
         <Stack.Screen name="index"></Stack.Screen>
       </Stack>
     </AppStateContext.Provider>
+    // </React.StrictMode>
   );
 }

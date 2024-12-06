@@ -60,9 +60,10 @@ const LoginBox = () => {
       console.log("Login successful:", data);
       // Handle successful login, e.g., navigate to another screen.
       const token = data.token;
-      SetValueForStore("user_token", token);
-
-      router.back();
+      SetValueForStore("user_token", token).then(() => {
+        appStateContext.setUserToken!(token);
+        router.back();
+      });
     } catch (error) {
       console.error("Login error:", error);
       // Handle errors appropriately, e.g., display an error message
