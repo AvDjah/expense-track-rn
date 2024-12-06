@@ -21,7 +21,7 @@ export default function AddExpense() {
   const [description, setDescription] = useState("");
 
   // Date Fields
-  const [date, setDate] = useState(new Date(1598051730000));
+  const [date, setDate] = useState(new Date());
   const [modeDate, setModeDate] = useState<AndroidMode>("date");
   const [showDate, setShowDate] = useState(false);
 

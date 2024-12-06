@@ -5,8 +5,8 @@ export async function SetValueForStore(key: string, value: string) {
   console.log("Stored user token in secure store");
 }
 
-export async function GetValueFromStore(key: string): Promise<string> {
-  let value = await SecureStore.getItemAsync(key);
+export  function GetValueFromStore(key: string): string {
+  let value = SecureStore.getItem(key);
   return value || "";
 }
 

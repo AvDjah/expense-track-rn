@@ -1,8 +1,8 @@
 import { Stack } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Text } from "react-native";
-import React, { useState } from "react";
-import { DeleteKeyFromStore } from "@/components/store/store";
+import { Image, Text } from "react-native";
+import React, { useEffect, useState } from "react";
+import { DeleteKeyFromStore, GetValueFromStore } from "@/components/store/store";
 import { USER_TOKEN_KEY } from "../components/store/store";
 
 export interface User {
@@ -44,7 +44,10 @@ export default function RootLayout() {
     loggedIn: false,
     user: null,
   });
-  const [userToken, setUserToken] = useState<string | null>(null);
+
+  const tokenValue = GetValueFromStore(USER_TOKEN_KEY);
+
+  const [userToken, setUserToken] = useState<string | null>(tokenValue === "" ? null : tokenValue);
 
   const loginUser = (user: User) => {
     setAppState((prevState) => ({
@@ -64,6 +67,51 @@ export default function RootLayout() {
     setUserToken(null);
   };
 
+  useEffect(() => {
+    console.log("Once: checking user token to be good")
+    checkUserAuth(userToken!);
+  },[userToken])
+
+
+  const checkUserAuth = async (token: string) => {
+    try {
+      const response = await fetch("http://10.0.2.2:8080/user/check", {
+        method: "GET",
+        headers: {
+          Authorization: "Bearer " + token,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.status === 200) {
+        const data = await response.json();
+        console.log("Success checking user: ", data);
+        setAppState((prevState) => ({
+          ...prevState,
+          loggedIn: true,
+          user: {
+            name:  data?.user?.Name,
+            email: data?.user?.Username
+          },
+        }));
+      } else if (response.status === 401) {
+        setAppState((prevState) => ({
+          ...prevState,
+          loggedIn: false,
+        }));
+      }
+    } catch (error) {
+      console.error("Error checking user:", error);
+      setAppState((prevState) => ({
+        ...prevState,
+        loggedIn: false,
+      }));
+    }
+  };
+
+
+
+
   return (
     // <React.StrictMode>
     <AppStateContext.Provider
@@ -78,7 +126,18 @@ export default function RootLayout() {
       <Stack
         screenOptions={{
           headerShadowVisible: false,
-          headerTitle: "Expense Tracxker",
+          headerTitleStyle: {
+            fontSize: 20,
+
+          },
+          headerTitle: "Expense Tractor",
+          headerBackVisible: true,
+          headerLeft: () => (
+            <Image
+              source={require("../assets/tractor.png")}
+              style={{ width: 30, height: 30, margin: 10 }}
+            />
+          ),
         }}
       >
         <Stack.Screen name="index"></Stack.Screen>
