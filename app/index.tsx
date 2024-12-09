@@ -12,9 +12,11 @@ import {
 } from "react-native";
 import ExpenseItem from "./ExpenseItem";
 import { AppStateContext } from "./_layout";
-import { GetValueFromStore, USER_TOKEN_KEY } from "../components/store/store";
+import { GetValueFromStore, useAppDispatch, useAppSelector, USER_TOKEN_KEY } from "../components/store/store";
 import ExpenseList from "@/components/home/itemList";
 import HeaderBar from "@/components/home/topBar";
+import Dashboard from "@/components/home/dashboard";
+import { setUserToken } from "@/components/store/user";
 
 // Add this interface before your component
 export interface Expense {
@@ -59,7 +61,17 @@ const buttonStyles = StyleSheet.create({
 
 export default function Index() {
   const appContext = useContext(AppStateContext);
-  
+  const dispatch = useAppDispatch()
+  const userTokenRedux = useAppSelector((state) => state.userToken);
+
+  useEffect(() => {
+    if(appContext.userToken !== "" && appContext.userToken !== null){
+      dispatch(setUserToken(appContext.userToken))
+    }
+  },[])
+
+
+
 
   return (
     <SafeAreaView
@@ -93,6 +105,7 @@ export default function Index() {
           </Pressable>
         )}
       </View>
+      {appContext.appState.loggedIn && <Dashboard /> }
       {appContext.appState.loggedIn && <ExpenseList />}
     </SafeAreaView>
   );

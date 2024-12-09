@@ -2,8 +2,14 @@ import { Stack } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Image, Text } from "react-native";
 import React, { useEffect, useState } from "react";
-import { DeleteKeyFromStore, GetValueFromStore } from "@/components/store/store";
+import {
+  DeleteKeyFromStore,
+  GetValueFromStore,
+  store,
+  useAppSelector,
+} from "@/components/store/store";
 import { USER_TOKEN_KEY } from "../components/store/store";
+import { Provider } from "react-redux";
 
 export interface User {
   name: string;
@@ -44,10 +50,12 @@ export default function RootLayout() {
     loggedIn: false,
     user: null,
   });
-
+  
   const tokenValue = GetValueFromStore(USER_TOKEN_KEY);
 
-  const [userToken, setUserToken] = useState<string | null>(tokenValue === "" ? null : tokenValue);
+  const [userToken, setUserToken] = useState<string | null>(
+    tokenValue === "" ? null : tokenValue,
+  );
 
   const loginUser = (user: User) => {
     setAppState((prevState) => ({
@@ -68,10 +76,9 @@ export default function RootLayout() {
   };
 
   useEffect(() => {
-    console.log("Once: checking user token to be good")
+    console.log("Once: checking user token to be good");
     checkUserAuth(userToken!);
-  },[userToken])
-
+  }, [userToken]);
 
   const checkUserAuth = async (token: string) => {
     try {
@@ -90,10 +97,11 @@ export default function RootLayout() {
           ...prevState,
           loggedIn: true,
           user: {
-            name:  data?.user?.Name,
-            email: data?.user?.Username
+            name: data?.user?.Name,
+            email: data?.user?.Username,
           },
         }));
+
       } else if (response.status === 401) {
         setAppState((prevState) => ({
           ...prevState,
@@ -109,40 +117,38 @@ export default function RootLayout() {
     }
   };
 
-
-
-
   return (
     // <React.StrictMode>
-    <AppStateContext.Provider
-      value={{
-        appState: appState,
-        loginUser: loginUser,
-        logoutUser: logoutUser,
-        userToken: userToken,
-        setUserToken: setUserToken,
-      }}
-    >
-      <Stack
-        screenOptions={{
-          headerShadowVisible: false,
-          headerTitleStyle: {
-            fontSize: 20,
-
-          },
-          headerTitle: "Expense Tractor",
-          headerBackVisible: true,
-          headerLeft: () => (
-            <Image
-              source={require("../assets/tractor.png")}
-              style={{ width: 30, height: 30, margin: 10 }}
-            />
-          ),
+    <Provider store={store}>
+      <AppStateContext.Provider
+        value={{
+          appState: appState,
+          loginUser: loginUser,
+          logoutUser: logoutUser,
+          userToken: userToken,
+          setUserToken: setUserToken,
         }}
       >
-        <Stack.Screen name="index"></Stack.Screen>
-      </Stack>
-    </AppStateContext.Provider>
+        <Stack
+          screenOptions={{
+            headerShadowVisible: false,
+            headerTitleStyle: {
+              fontSize: 20,
+            },
+            headerTitle: "Expense Tractor",
+            headerBackVisible: true,
+            headerLeft: () => (
+              <Image
+                source={require("../assets/tractor.png")}
+                style={{ width: 30, height: 30, margin: 10 }}
+              />
+            ),
+          }}
+        >
+          <Stack.Screen name="index"></Stack.Screen>
+        </Stack>
+      </AppStateContext.Provider>
+    </Provider>
     // </React.StrictMode>
   );
 }

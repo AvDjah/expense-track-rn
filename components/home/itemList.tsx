@@ -11,10 +11,15 @@ import {
   View,
   Text,
 } from "react-native";
+import { useDispatch, useSelector } from "react-redux";
+import { RootState } from "../store/store";
+import { updateExpenseList } from "../store/expense";
 
 export default function ExpenseList() {
   const appContext = useContext(AppStateContext);
-  const [expenses, setExpenseList] = useState<Expense[]>([]);
+
+  const expenses = useSelector((state: RootState) => state.expenses);
+  const dispatch = useDispatch();
 
   const fetchExpenses = async () => {
     if (appContext.userToken === null) {
@@ -31,10 +36,10 @@ export default function ExpenseList() {
         },
       });
       const data: Expense[] = await response.json();
-      setExpenseList(data);
+      dispatch(updateExpenseList(data));
       console.log("Fetched expenses: ", data.length);
     } catch (error) {
-      setExpenseList([]);
+      dispatch(updateExpenseList([]));
       console.error("Error fetching expenses: ", error);
     }
   };
@@ -44,7 +49,6 @@ export default function ExpenseList() {
       triggerFetch();
     }, []),
   );
-
 
   const triggerFetch = () => {
     fetchExpenses();
@@ -58,22 +62,24 @@ export default function ExpenseList() {
           margin: 10,
         }}
       >
-        <Animated.View
+        <View
           style={{
-            alignItems: "center",
-            padding: 10,
-            borderWidth: 2,
-            borderRadius: 15,
-            paddingVertical: 10,
-            paddingHorizontal: 20,
+            flexDirection: "row",
+            justifyContent: "center",
+            gap: 20,
           }}
         >
-          <Link href="/addExpense">
-            <Pressable
-              style={{
-                alignSelf: "flex-start",
-              }}
-            >
+          <Pressable
+            style={{
+              alignItems: "center",
+              padding: 10,
+              borderWidth: 2,
+              borderRadius: 15,
+              paddingVertical: 10,
+              paddingHorizontal: 20,
+            }}
+          >
+            <Link href="/addExpense">
               <Text
                 style={{
                   fontSize: 12,
@@ -81,16 +87,36 @@ export default function ExpenseList() {
               >
                 Add New
               </Text>
-            </Pressable>
-          </Link>
-        </Animated.View>
+            </Link>
+          </Pressable>
+          <Pressable
+            style={{
+              alignItems: "center",
+              padding: 10,
+              borderWidth: 2,
+              borderRadius: 15,
+              paddingVertical: 10,
+              paddingHorizontal: 20,
+            }}
+          >
+            <Link href="/categories">
+              <Text
+                style={{
+                  fontSize: 12,
+                }}
+              >
+                Show Categories
+              </Text>
+            </Link>
+          </Pressable>
+        </View>
       </View>
       <SafeAreaView
         style={{
           borderWidth: 2,
           margin: 10,
           borderRadius: 15,
-          maxHeight: "70%",
+          maxHeight: "62%",
         }}
       >
         <Text

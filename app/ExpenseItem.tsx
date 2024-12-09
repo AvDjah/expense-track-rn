@@ -11,27 +11,9 @@ import { useEffect, useState } from "react";
 import { Expense } from ".";
 
 export default function ExpenseItem({ expense }: { expense: Expense }) {
-  const [isExpandable, setIsExpandable] = useState(false);
-
-  const [expanded, setExpanded] = useState(false);
-
-  let isCompressed = false;
 
   let currency = "Rs.";
 
-  const layoutCheck = (e: LayoutChangeEvent) => {
-    // console.log("Height of element: ", e.nativeEvent.layout.height);
-    const height = e.nativeEvent.layout.height;
-    if (height > 50) {
-      // console.log("Setting layout to expandable");
-      setIsExpandable(true);
-      isCompressed = true;
-    }
-  };
-
-  const toggleExpanded = () => {
-    setExpanded(!expanded);
-  };
 
   return (
     <View
@@ -70,8 +52,7 @@ export default function ExpenseItem({ expense }: { expense: Expense }) {
               fontWeight: "800",
               fontSize: 15, // Changed font size to 15 for heading
             }}
-            onLayout={layoutCheck}
-            // numberOfLines={expanded ? undefined : 2}
+          // numberOfLines={expanded ? undefined : 2}
           >
             {expense.Name}
           </Text>
@@ -85,31 +66,24 @@ export default function ExpenseItem({ expense }: { expense: Expense }) {
             {currency} {expense.Amount}
           </Text>
         </View>
-        <CustomButton />
-      </View>
-      {isExpandable ? (
-        <Pressable
+        <View
           style={{
-            backgroundColor: "#6206d4",
-            width: 60,
-            padding: 5,
-            borderRadius: 4,
-            marginTop: 10,
+            backgroundColor: "#f0f0f0",
+            padding: 10,
+            borderRadius: 5,
+            flexDirection: "column",
+            alignItems: "center"
           }}
         >
-          <Text
-            style={{
-              color: "white",
-              textAlign: "center",
-              fontSize: 12, // Changed font size to 12
-            }}
-          >
-            {expanded ? "Collapse" : "Expand"}
+          <Text style={{ color: "#333", fontSize: 10 }}>
+            {expense.CreatedOn.Time.split("T")[1].slice(0, 5)} {/* hh:mm */}
           </Text>
-        </Pressable>
-      ) : (
-        <View></View>
-      )}
+          <Text style={{ color: "#333", fontSize: 10 }}>
+            {new Date(expense.CreatedOn.Time).toLocaleDateString("en-GB")} {/* dd-mm-yyyy */}
+          </Text>
+        </View>
+
+      </View>
     </View>
   );
 }
