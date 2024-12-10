@@ -6,18 +6,26 @@ import {
   StyleSheet,
   SafeAreaView,
 } from "react-native";
-import React, { useContext, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { router } from "expo-router";
 import { AppStateContext } from "../_layout";
+import DropdownComponent from "@/components/dropdown";
+import { RootState, useAppDispatch, useAppSelector } from "@/components/store/store";
+import { Category, fetchCategories } from "@/components/store/category";
+import { useDispatch } from "react-redux";
 
 type AndroidMode = "date" | "time";
 
 export default function AddExpense() {
   const appContext = useContext(AppStateContext);
 
+  const categories = useAppSelector((state: RootState) => state.categories)
+  const dispatch = useAppDispatch()
+
+
   const [expenseName, setExpenseName] = useState("");
-  const [amount, setAmount] = useState("0");
+  const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
 
   // Date Fields
@@ -30,6 +38,10 @@ export default function AddExpense() {
   const [modeTime, setModeTime] = useState<AndroidMode>("time");
   const [showTime, setShowTime] = useState(false);
 
+  // Category Field
+  const [categoryId,setCategoryId] = useState<string | null>(null)
+
+
   const onChangeDate = (event: any, selectedDate: Date | undefined) => {
     const currentDate = selectedDate || date;
     setShowDate(false);
@@ -41,6 +53,14 @@ export default function AddExpense() {
     setShowTime(false);
     setTime(currentTime);
   };
+
+  useEffect(() => {
+    if (categories.state === 'idle') {
+      dispatch(fetchCategories())
+    }
+  }, []);
+
+
 
   const showModeDate = (currentMode: "date") => {
     setShowDate(true);
@@ -61,6 +81,13 @@ export default function AddExpense() {
   };
 
   const submitData = async () => {
+
+    if (!expenseName || !date || !amount || amount === "0") {
+      console.log("Name, date, amount can not be empty or zero");
+      return;
+    }
+
+
     if (appContext.userToken === "" || appContext.userToken === null) {
       console.log("toke does not exist hence fetch cancelled.");
       return;
@@ -81,11 +108,11 @@ export default function AddExpense() {
         },
         body: JSON.stringify({
           name: expenseName,
-          amount: parseFloat(amount),
+          amount: amount,
           date: combinedDateTime,
           description,
           paymentType: "credit",
-          categoryId: 0,
+          categoryId: categoryId,
         }),
       });
       if (!response.ok) {
@@ -99,40 +126,7 @@ export default function AddExpense() {
     }
   };
 
-  const styles = StyleSheet.create({
-    button: {
-      borderRadius: 10, // Adjust this value to control roundness
-      backgroundColor: "#4CAF50", // A nice green; change as desired
-      paddingVertical: 10, // Vertical padding inside the button
-      paddingHorizontal: 20, // Horizontal padding
-      borderWidth: 1, // Add a border
-      borderColor: "#388E8E", // Border color; consider a shade darker than background
-      color: "white", // Text color (assuming white on green background)
-      alignItems: "center", // Center content horizontally
-      justifyContent: "center", // Center content vertically
-    },
-    buttonText: {
-      // Style for the text within the button
-      color: "white", // Text color
-      fontSize: 16, // Adjust font size as needed
-      fontWeight: "bold", // Make text bold
-    },
-    input: {
-      borderColor: "lightgray",
-      borderWidth: 1,
-      padding: 10,
-      borderRadius: 10,
-      marginTop: 5,
-    },
-    textarea: {
-      borderColor: "lightgray",
-      borderWidth: 1,
-      padding: 10,
-      borderRadius: 10,
-      marginTop: 5,
-      height: 100,
-    },
-  });
+
 
   return (
     <View style={{ padding: 10, margin: 10 }}>
@@ -152,8 +146,8 @@ export default function AddExpense() {
         <TextInput
           placeholder="Amount"
           value={amount}
-          onChangeText={setAmount}
           keyboardType="numeric"
+          onChangeText={text => setAmount(text.replace(/^0+/, ''))}
           style={styles.input}
           placeholderTextColor="gray"
         />
@@ -187,6 +181,14 @@ export default function AddExpense() {
           )}
         </SafeAreaView>
       </View>
+      <View style={{ padding: 10, marginBottom: 10 }} >
+        <Text>Select Category</Text>
+        <DropdownComponent setOptionValue={setCategoryId}
+          data={categories.categories.map((el: Category) => {
+            return { label: el.Name, value: el.Id }
+          })} >
+        </DropdownComponent>
+      </View>
       <View style={{ padding: 10, marginBottom: 10 }}>
         <Text>Time</Text>
         <SafeAreaView>
@@ -216,3 +218,39 @@ export default function AddExpense() {
     </View>
   );
 }
+
+
+const styles = StyleSheet.create({
+  button: {
+    borderRadius: 10, // Adjust this value to control roundness
+    backgroundColor: "#4CAF50", // A nice green; change as desired
+    paddingVertical: 10, // Vertical padding inside the button
+    paddingHorizontal: 20, // Horizontal padding
+    borderWidth: 1, // Add a border
+    borderColor: "#388E8E", // Border color; consider a shade darker than background
+    color: "white", // Text color (assuming white on green background)
+    alignItems: "center", // Center content horizontally
+    justifyContent: "center", // Center content vertically
+  },
+  buttonText: {
+    // Style for the text within the button
+    color: "white", // Text color
+    fontSize: 16, // Adjust font size as needed
+    fontWeight: "bold", // Make text bold
+  },
+  input: {
+    borderColor: "lightgray",
+    borderWidth: 1,
+    padding: 10,
+    borderRadius: 10,
+    marginTop: 5,
+  },
+  textarea: {
+    borderColor: "lightgray",
+    borderWidth: 1,
+    padding: 10,
+    borderRadius: 10,
+    marginTop: 5,
+    height: 100,
+  },
+});

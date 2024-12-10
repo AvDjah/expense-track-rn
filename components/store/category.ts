@@ -4,6 +4,7 @@ import { AppDispatch, RootState } from "./store";
 export interface Category {
     Name: string;
     Description: string;
+    Id: number
 }
 
 export interface CategoryState {
@@ -42,7 +43,8 @@ export const fetchCategories = createAsyncThunk(
         data.forEach((element : any) => {
             res.push({
                 Name: element.Name,
-                Description: element.Description.String
+                Description: element.Description.String,
+                Id: element.ID
             })
         });
         // console.log("ress:",res)

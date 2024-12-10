@@ -10,6 +10,8 @@ import {
   Text,
 } from "react-native";
 import { router } from "expo-router";
+import { useDispatch, useSelector } from "react-redux";
+import { setUserToken } from "../store/user";
 
 const styles = StyleSheet.create({
   container: {
@@ -33,6 +35,12 @@ const styles = StyleSheet.create({
 
 const LoginBox = () => {
   const appStateContext = useContext(AppStateContext);
+
+  const userToken = useSelector((state: any) => state.userToken);
+  const dispatch = useDispatch()
+
+
+
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -64,6 +72,7 @@ const LoginBox = () => {
         appStateContext.setUserToken!(token);
         router.back();
       });
+      dispatch(setUserToken(token));
     } catch (error) {
       console.error("Login error:", error);
       // Handle errors appropriately, e.g., display an error message

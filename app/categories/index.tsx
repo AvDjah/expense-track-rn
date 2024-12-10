@@ -12,6 +12,7 @@ import { Category, fetchCategories } from "@/components/store/category";
 export default function Categories() {
 
   const categories = useAppSelector((state: RootState) => state.categories)
+  const expenses = useAppSelector((state: RootState) => state.expenses)
   const dispatch = useAppDispatch()
 
   useEffect(() => {
@@ -55,13 +56,24 @@ export default function Categories() {
       <FlatList
         data={categories.categories}
         keyExtractor={(item, index) => index.toString()}
-        renderItem={({ item }) => <CategoryItem item={item} />}
+        renderItem={({ item }) => <CategoryItem item={{
+          item: item,
+          spent: expenses.filter(expense => expense.CategoryID.Int64 === item.Id).reduce((sum, expense) => sum + expense.Amount, 0),
+          budget: 2000
+        }} />}
       />
     </SafeAreaView>
   );
 }
 
-const CategoryItem = ({ item }: { item: Category }) => {
+interface CategoryListItemProps {
+  item: Category;
+  spent : number,
+  budget : number
+}
+
+
+const CategoryItem = ({ item }: { item: CategoryListItemProps }) => {
   return (
     <View
       style={{
@@ -78,8 +90,8 @@ const CategoryItem = ({ item }: { item: Category }) => {
       <View style={{
         flex: 2
       }} >
-        <Text style={{ fontSize: 18, fontWeight: "bold" }}>{item.Name}</Text>
-        <Text style={{ color: "gray" }}>{item.Description}</Text>
+        <Text style={{ fontSize: 18, fontWeight: "bold" }}>{item.item.Name}</Text>
+        <Text style={{ color: "gray" }}>{item.item.Description}</Text>
       </View>
       <View style={{
         flex: 1
@@ -87,11 +99,11 @@ const CategoryItem = ({ item }: { item: Category }) => {
         <Text style={{
           color: 'red',
           fontWeight: 600
-        }} >Spent: Rs {1000}</Text>
+        }} >Spent: Rs {item.spent}</Text>
         <Text style={{
           color: 'green',
           fontWeight: 600
-        }}  >Budget: Rs {2000}</Text>
+        }}  >Budget: Rs {item.budget}</Text>
       </View>
     </View>
   );
