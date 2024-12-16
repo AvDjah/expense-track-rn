@@ -2,6 +2,7 @@ import { View, Text, Pressable, AppState, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useSelector } from "react-redux";
 import { RootState } from "../store/store";
+import { Link } from "expo-router";
 
 export default function Dashboard() {
   const expenseList = useSelector((state: RootState) => state.expenses);
@@ -18,18 +19,43 @@ export default function Dashboard() {
       <View style={styles.headingContainer}>
         <Text style={styles.heading}>Dashboard</Text>
       </View>
-     <View style={{
-      flexDirection: "row",
-      justifyContent: "space-between",
-      margin: 5, padding: 4,
-     }} >
-        <Text style={{...styles.rowText}} >
+      <View style={{
+        flexDirection: "row",
+        justifyContent: "space-between",
+        margin: 5, padding: 4,
+      }} >
+        <Text style={{ ...styles.rowText }} >
           Amount Spent
         </Text>
-        <Text style={{...styles.rowText}} >
-          Rs. {roundedTotalExpenses} 
+        <Text style={{ ...styles.rowText }} >
+          Rs. {roundedTotalExpenses}
         </Text>
-     </View>
+      </View>
+      <View style={{
+        position: "absolute",
+        bottom: 20,
+        alignSelf: "center",
+        borderWidth: 2,
+        // flex: 1,
+        flexDirection: "column",
+        justifyContent: "center",
+        margin: 2,
+        width: 100,
+        height: 30,
+        borderRadius: 10,
+        borderColor: "white"
+      }} >
+        <Pressable>
+          <Link href="/history" >
+            <Text style={{
+              textAlign: 'center'
+              , color: "white",
+            }} >
+              Show history
+            </Text>
+          </Link>
+        </Pressable>
+      </View>
     </SafeAreaView>
   );
 }
@@ -45,7 +71,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
-    elevation: 5, 
+    elevation: 5,
   },
   headingContainer: {
     alignItems: "center",

@@ -32,6 +32,7 @@ export default function AddNewCategory() {
       const category: Category = {
         Name: categoryName,
         Description: categoryDescription,
+        Id: 0
       };
       const result = await dispatch(createCategory(category));
       if (createCategory.fulfilled.match(result)) {

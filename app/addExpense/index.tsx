@@ -11,7 +11,11 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import { router } from "expo-router";
 import { AppStateContext } from "../_layout";
 import DropdownComponent from "@/components/dropdown";
-import { RootState, useAppDispatch, useAppSelector } from "@/components/store/store";
+import {
+  RootState,
+  useAppDispatch,
+  useAppSelector,
+} from "@/components/store/store";
 import { Category, fetchCategories } from "@/components/store/category";
 import { useDispatch } from "react-redux";
 
@@ -20,9 +24,8 @@ type AndroidMode = "date" | "time";
 export default function AddExpense() {
   const appContext = useContext(AppStateContext);
 
-  const categories = useAppSelector((state: RootState) => state.categories)
-  const dispatch = useAppDispatch()
-
+  const categories = useAppSelector((state: RootState) => state.categories);
+  const dispatch = useAppDispatch();
 
   const [expenseName, setExpenseName] = useState("");
   const [amount, setAmount] = useState("");
@@ -39,8 +42,7 @@ export default function AddExpense() {
   const [showTime, setShowTime] = useState(false);
 
   // Category Field
-  const [categoryId,setCategoryId] = useState<string | null>(null)
-
+  const [categoryId, setCategoryId] = useState<string | null>(null);
 
   const onChangeDate = (event: any, selectedDate: Date | undefined) => {
     const currentDate = selectedDate || date;
@@ -55,12 +57,10 @@ export default function AddExpense() {
   };
 
   useEffect(() => {
-    if (categories.state === 'idle') {
-      dispatch(fetchCategories())
+    if (categories.state === "idle") {
+      dispatch(fetchCategories());
     }
   }, []);
-
-
 
   const showModeDate = (currentMode: "date") => {
     setShowDate(true);
@@ -81,12 +81,10 @@ export default function AddExpense() {
   };
 
   const submitData = async () => {
-
     if (!expenseName || !date || !amount || amount === "0") {
       console.log("Name, date, amount can not be empty or zero");
       return;
     }
-
 
     if (appContext.userToken === "" || appContext.userToken === null) {
       console.log("toke does not exist hence fetch cancelled.");
@@ -108,7 +106,7 @@ export default function AddExpense() {
         },
         body: JSON.stringify({
           name: expenseName,
-          amount: amount,
+          amount: parseFloat(amount),
           date: combinedDateTime,
           description,
           paymentType: "credit",
@@ -125,8 +123,6 @@ export default function AddExpense() {
       console.error("Error:", error);
     }
   };
-
-
 
   return (
     <View style={{ padding: 10, margin: 10 }}>
@@ -147,7 +143,7 @@ export default function AddExpense() {
           placeholder="Amount"
           value={amount}
           keyboardType="numeric"
-          onChangeText={text => setAmount(text.replace(/^0+/, ''))}
+          onChangeText={(text) => setAmount(text.replace(/^0+/, ""))}
           style={styles.input}
           placeholderTextColor="gray"
         />
@@ -181,13 +177,14 @@ export default function AddExpense() {
           )}
         </SafeAreaView>
       </View>
-      <View style={{ padding: 10, marginBottom: 10 }} >
+      <View style={{ padding: 10, marginBottom: 10 }}>
         <Text>Select Category</Text>
-        <DropdownComponent setOptionValue={setCategoryId}
+        <DropdownComponent
+          setOptionValue={setCategoryId}
           data={categories.categories.map((el: Category) => {
-            return { label: el.Name, value: el.Id }
-          })} >
-        </DropdownComponent>
+            return { label: el.Name, value: el.Id };
+          })}
+        ></DropdownComponent>
       </View>
       <View style={{ padding: 10, marginBottom: 10 }}>
         <Text>Time</Text>
@@ -218,7 +215,6 @@ export default function AddExpense() {
     </View>
   );
 }
-
 
 const styles = StyleSheet.create({
   button: {
